@@ -2028,7 +2028,7 @@ function updateComplexityChart(maxN) {
   html += `<text x="${lx + 30}" y="${ly + 11}" fill="#58a6ff" font-size="13" font-family="'Courier New',monospace">Huffman — O(n log n)</text>`;
   if (showCompare) {
     html += `<line x1="${lx}" y1="${ly + 28}" x2="${lx + 24}" y2="${ly + 28}" stroke="#f85149" stroke-width="2.5" stroke-dasharray="7,4"/>`;
-    html += `<text x="${lx + 30}" y="${ly + 33}" fill="#f85149" font-size="13" font-family="'Courier New',monospace">Shannon-Fano — O(n²) worst</text>`;
+    html += `<text x="${lx + 30}" y="${ly + 33}" fill="#f85149" font-size="13" font-family="'Courier New',monospace">Shannon-Fano — O(n²)</text>`;
     html += `<line x1="${lx}" y1="${ly + 50}" x2="${lx + 24}" y2="${ly + 50}" stroke="#3fb950" stroke-width="2.5" stroke-dasharray="4,3"/>`;
     html += `<text x="${lx + 30}" y="${ly + 55}" fill="#3fb950" font-size="13" font-family="'Courier New',monospace">Arithmetic Coding — O(n)</text>`;
   }
