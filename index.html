@@ -1,0 +1,2114 @@
+<!DOCTYPE html>
+<!-- saved from url=(0059)file:///C:/Users/Mabdu/Downloads/huffman_coding_tool_5.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Huffman Coding — Interactive Visualization</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --panel: #161b22;
+    --panel2: #1c2430;
+    --border: #30363d;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --accent: #58a6ff;
+    --green: #3fb950;
+    --orange: #d29922;
+    --red: #f85149;
+    --purple: #bc8cff;
+    --teal: #39d353;
+    --yellow: #f0e060;
+    --node-default: #21262d;
+    --node-active: #1f4068;
+    --node-merged: #1b3a2d;
+    --node-highlight: #3d2b00;
+    --font-mono: 'Courier New', monospace;
+    --radius: 8px;
+    --transition: 200ms ease;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  header {
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  header h1 { font-size: 17px; font-weight: 600; color: var(--accent); }
+  header span { color: var(--muted); font-size: 12px; }
+
+  .main-layout {
+    display: flex;
+    height: calc(100vh - 45px);
+    overflow: hidden;
+  }
+
+  /* LEFT PANEL */
+  .left-panel {
+    width: 420px;
+    min-width: 420px;
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .section {
+    border-bottom: 1px solid var(--border);
+    padding: 12px 14px;
+  }
+  .section-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  label { color: var(--muted); font-size: 12px; }
+
+  input[type=text] {
+    width: 100%;
+    padding: 7px 10px;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-size: 13px;
+    outline: none;
+    transition: border var(--transition);
+  }
+  input[type=text]:focus { border-color: var(--accent); }
+
+  .preset-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+  }
+
+  .btn {
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--panel2);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 12px;
+    transition: all var(--transition);
+  }
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn.primary { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+  .btn.primary:hover { opacity: 0.85; }
+  .btn.danger { border-color: var(--red); color: var(--red); }
+  .btn.danger:hover { background: var(--red); color: #fff; }
+  .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  .playback-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    margin-top: 6px;
+  }
+
+  .speed-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+  }
+  .speed-row input[type=range] { flex: 1; accent-color: var(--accent); }
+  .speed-label { min-width: 36px; text-align: right; color: var(--accent); font-weight: 600; font-size: 12px; }
+
+  .step-info {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+    font-size: 12px;
+  }
+  .step-counter { color: var(--text); }
+  .status-badge {
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+  }
+  .status-badge.idle { color: var(--muted); }
+  .status-badge.ready { color: var(--teal); border-color: var(--teal); }
+  .status-badge.playing { color: var(--accent); border-color: var(--accent); }
+  .status-badge.paused { color: var(--orange); border-color: var(--orange); }
+  .status-badge.done { color: var(--green); border-color: var(--green); }
+
+  /* Stats */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .stat-box {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 8px 10px;
+    text-align: center;
+  }
+  .stat-box .val {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  .stat-box .lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; }
+
+  /* Pseudocode */
+  .pseudo-panel {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    background: var(--panel2);
+    border-radius: var(--radius);
+    overflow: hidden;
+    max-height: 220px;
+    overflow-y: auto;
+  }
+  .pseudo-line {
+    display: flex;
+    gap: 8px;
+    padding: 2px 8px;
+    cursor: pointer;
+    transition: background var(--transition);
+    position: relative;
+  }
+  .pseudo-line:hover { background: #ffffff0a; }
+  .pseudo-line.active { background: #1f4068; border-left: 3px solid var(--accent); }
+  .pseudo-line .ln { color: #444c56; min-width: 18px; text-align: right; user-select: none; }
+  .pseudo-line .code { color: var(--text); white-space: pre; }
+  .pseudo-line .tooltip-text {
+    display: none;
+    position: absolute;
+    left: 100%;
+    top: 0;
+    background: #1c2430;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-family: sans-serif;
+    font-size: 11px;
+    color: var(--text);
+    width: 200px;
+    z-index: 10;
+    white-space: normal;
+  }
+  .pseudo-line:hover .tooltip-text { display: block; }
+
+  /* Step explanation */
+  #step-box {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    min-height: 48px;
+    font-size: 12.5px;
+    color: var(--text);
+    line-height: 1.6;
+  }
+  #step-box span.val { color: var(--accent); font-weight: 600; }
+  #step-box span.op { color: var(--orange); font-weight: 600; }
+
+  /* History table */
+  .history-wrap {
+    max-height: 160px;
+    overflow-y: auto;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+  }
+  .history-wrap table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+  }
+  .history-wrap thead { position: sticky; top: 0; }
+  .history-wrap thead th {
+    background: var(--panel2);
+    color: var(--muted);
+    padding: 4px 8px;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 1px solid var(--border);
+  }
+  .history-wrap tbody tr {
+    cursor: pointer;
+    border-bottom: 1px solid #21262d;
+    transition: background var(--transition);
+  }
+  .history-wrap tbody tr:hover { background: #21262d; }
+  .history-wrap tbody tr.active-row { background: #1f4068; }
+  .history-wrap td { padding: 4px 8px; }
+  .history-wrap td.action { color: var(--accent); }
+  .history-wrap td.merge { color: var(--green); }
+  .history-wrap td.extract { color: var(--orange); }
+
+  /* RIGHT PANEL */
+  .right-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .viz-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel);
+    padding: 0 12px;
+    gap: 2px;
+  }
+  .viz-tab {
+    padding: 8px 14px;
+    font-size: 12px;
+    cursor: pointer;
+    color: var(--muted);
+    border-bottom: 2px solid transparent;
+    transition: all var(--transition);
+  }
+  .viz-tab:hover { color: var(--text); }
+  .viz-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .viz-content {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+  }
+  .viz-pane {
+    display: none;
+    width: 100%;
+    height: 100%;
+  }
+  .viz-pane.active { display: flex; flex-direction: column; }
+
+  /* Tree SVG */
+  #tree-svg-wrap {
+    flex: 1;
+    overflow: auto;
+    background: var(--bg);
+    position: relative;
+  }
+  #tree-svg {
+    min-width: 600px;
+    min-height: 400px;
+    width: 100%;
+  }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    gap: 12px;
+    padding: 6px 14px;
+    background: var(--panel);
+    border-top: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); }
+  .legend-dot { width: 12px; height: 12px; border-radius: 50%; }
+
+  /* Heap viz */
+  #heap-svg-wrap { flex: 1; overflow: auto; background: var(--bg); }
+  #heap-svg { min-width: 500px; min-height: 300px; width: 100%; }
+
+  /* Combined split pane */
+  #tab-combined {
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  .combined-top {
+    display: flex;
+    flex-direction: column;
+    border-bottom: 2px solid var(--border);
+    flex-shrink: 0;
+  }
+  .combined-bottom {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+  .combined-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--muted);
+    padding: 4px 12px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  #tree-svg-wrap-combined {
+    overflow-x: auto;
+    overflow-y: visible;
+    background: var(--bg);
+  }
+  #tree-svg-combined {
+    min-width: 600px;
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+  #heap-svg-wrap-combined {
+    overflow-x: auto;
+    overflow-y: visible;
+    background: var(--bg);
+  }
+  #heap-svg-combined {
+    min-width: 500px;
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+  .combined-legend {
+    display: flex;
+    gap: 10px;
+    padding: 5px 12px;
+    background: var(--panel);
+    border-top: 1px solid var(--border);
+    flex-wrap: wrap;
+    flex-shrink: 0;
+  }
+
+  /* Encode/Decode Panel */
+  .encode-panel {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .code-table-wrap {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .code-table-wrap table { width: 100%; border-collapse: collapse; }
+  .code-table-wrap th {
+    background: var(--panel2);
+    color: var(--muted);
+    padding: 6px 12px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+  .code-table-wrap td {
+    padding: 6px 12px;
+    border-top: 1px solid var(--border);
+    font-size: 12.5px;
+  }
+  .code-table-wrap td.char { font-family: var(--font-mono); color: var(--yellow); font-weight: 700; font-size: 15px; }
+  .code-table-wrap td.bits { font-family: var(--font-mono); color: var(--accent); }
+  .code-table-wrap td.savings { color: var(--green); }
+
+  textarea {
+    width: 100%;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    padding: 8px 10px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    resize: vertical;
+    outline: none;
+  }
+  textarea:focus { border-color: var(--accent); }
+
+  .encode-result {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    word-break: break-all;
+    color: var(--green);
+    max-height: 100px;
+    overflow-y: auto;
+  }
+  .decode-result {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    font-size: 13px;
+    color: var(--yellow);
+  }
+
+  /* Complexity Chart Pane */
+  .complexity-panel {
+    flex: 1;
+    padding: 20px 24px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .complexity-controls {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .complexity-controls label { color: var(--muted); font-size: 13px; }
+  .complexity-controls input[type=range] { accent-color: var(--accent); width: 160px; }
+  #complexity-chart { width: 100%; flex-shrink: 0; display: block; }
+  .complexity-table {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .complexity-table table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+  .complexity-table th {
+    background: var(--panel2);
+    color: var(--text);
+    padding: 13px 18px;
+    font-size: 14px;
+    font-weight: 700;
+    text-align: left;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    border-bottom: 2px solid var(--accent);
+  }
+  .complexity-table td {
+    padding: 13px 18px;
+    border-top: 1px solid var(--border);
+    font-size: 14.5px;
+    vertical-align: middle;
+  }
+  .complexity-table td:first-child { font-size: 15px; font-weight: 600; color: var(--text); }
+  .complexity-table td.big-o { font-family: var(--font-mono); color: var(--accent); font-size: 14px; }
+  .complexity-table tbody tr:nth-child(even) td { background: #0d1117; }
+  .complexity-table tbody tr:hover td { background: var(--node-active); transition: background 150ms; }
+
+  /* Greedy Panel */
+  .greedy-panel {
+    flex: 1;
+    padding: 16px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .greedy-step-list { display: flex; flex-direction: column; gap: 8px; }
+  .greedy-step {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    transition: border-color var(--transition);
+  }
+  .greedy-step.current { border-color: var(--accent); background: var(--node-active); }
+  .greedy-step.done { border-color: var(--green); opacity: 0.7; }
+  .greedy-step .step-num {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #000;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+  .greedy-step.done .step-num { background: var(--green); }
+
+  /* Educational section */
+  .edu-panel {
+    flex: 1;
+    padding: 16px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .collapsible-section { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .collapsible-header {
+    background: var(--panel2);
+    padding: 10px 14px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+    font-size: 13px;
+  }
+  .collapsible-header:hover { background: #21262d; }
+  .collapsible-body { padding: 14px; display: none; font-size: 12.5px; line-height: 1.7; color: var(--muted); }
+  .collapsible-body.open { display: block; }
+  .collapsible-body p { margin-bottom: 8px; }
+  .collapsible-body h4 { color: var(--text); font-size: 13px; margin: 12px 0 6px; }
+  .collapsible-body ul { padding-left: 18px; }
+  .collapsible-body li { margin-bottom: 4px; }
+
+  .concept-box {
+    border-left: 3px solid var(--accent);
+    background: var(--node-active);
+    padding: 10px 12px;
+    border-radius: 0 var(--radius) var(--radius) 0;
+    font-size: 12px;
+    color: var(--text);
+  }
+  .concept-box.warning {
+    border-left-color: var(--orange);
+    background: var(--node-highlight);
+  }
+  .concept-box.success {
+    border-left-color: var(--green);
+    background: var(--node-merged);
+  }
+  .concept-box strong { display: block; margin-bottom: 4px; font-size: 13px; color: var(--accent); }
+  .concept-box.warning strong { color: var(--orange); }
+  .concept-box.success strong { color: var(--green); }
+
+  /* Responsive */
+  @media (max-width: 980px) {
+    .main-layout { flex-direction: column; height: auto; }
+    .left-panel { width: 100%; min-width: unset; }
+    .right-panel { height: 600px; }
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #484f58; }
+
+  /* SVG nodes */
+  .huff-node { transition: all 300ms ease; }
+  .huff-node circle { stroke-width: 2; }
+  .huff-node text { font-family: var(--font-mono); font-size: 11px; pointer-events: none; }
+  .huff-edge { stroke-width: 1.5; }
+
+  /* Heap bars */
+  .heap-bar { transition: all 250ms ease; }
+
+  /* Freq display in input */
+  #freq-display {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 6px;
+  }
+  .freq-chip {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 7px;
+    font-size: 11px;
+    font-family: var(--font-mono);
+  }
+  .freq-chip span { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Huffman Coding</h1>
+  <span>Interactive Visualization · BCS 309 · Spring 2026</span>
+</header>
+
+<div class="main-layout">
+  <!-- LEFT PANEL -->
+  <div class="left-panel">
+
+    <!-- Input -->
+    <div class="section">
+      <div class="section-title">Input</div>
+      <label>Enter text to encode:</label>
+      <input type="text" id="text-input" value="abracadabra" placeholder="Type any text...">
+      <div id="freq-display"><div class="freq-chip">a:<span>5</span></div><div class="freq-chip">b:<span>2</span></div><div class="freq-chip">r:<span>2</span></div><div class="freq-chip">c:<span>1</span></div><div class="freq-chip">d:<span>1</span></div></div>
+      <div class="preset-row">
+        <button class="btn" onclick="loadPreset(&#39;abracadabra&#39;)">ABRACADABRA</button>
+        <button class="btn" onclick="loadPreset(&#39;mississippi&#39;)">MISSISSIPPI</button>
+        <button class="btn" onclick="loadPreset(&#39;aaaaabbbccd&#39;)">Worst Skewed</button>
+        <button class="btn" onclick="loadPreset(&#39;hello world&#39;)">Hello World</button>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="section">
+      <div class="section-title">Playback</div>
+      <div class="playback-row">
+        <button class="btn primary" id="btn-build" onclick="buildSteps()">Build Steps</button>
+        <button class="btn" id="btn-step" onclick="stepForward()">Step ▶</button>
+        <button class="btn" id="btn-play" onclick="playAnim()">▶ Play</button>
+        <button class="btn" id="btn-pause" onclick="pauseAnim()" disabled="">⏸ Pause</button>
+        <button class="btn danger" id="btn-reset" onclick="resetAll()">↺ Reset</button>
+      </div>
+      <div class="speed-row">
+        <label>Speed:</label>
+        <input type="range" id="speed-slider" min="1" max="8" value="4" oninput="updateSpeed(this.value)">
+        <div class="speed-label" id="speed-label">1x</div>
+      </div>
+      <div class="step-info">
+        <span class="step-counter" id="step-counter">Step 33 / 33</span>
+        <span class="status-badge done" id="status-badge">Done</span>
+      </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="section">
+      <div class="section-title">Statistics</div>
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div class="val" id="stat-extractions">8</div>
+          <div class="lbl">Extractions</div>
+        </div>
+        <div class="stat-box">
+          <div class="val" id="stat-merges">4</div>
+          <div class="lbl">Merges</div>
+        </div>
+        <div class="stat-box">
+          <div class="val" id="stat-comparisons">22</div>
+          <div class="lbl">Comparisons</div>
+        </div>
+        <div class="stat-box">
+          <div class="val" id="stat-bits">23</div>
+          <div class="lbl">Bits (encoded)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pseudocode -->
+    <div class="section">
+      <div class="section-title">Pseudocode</div>
+      <div class="pseudo-panel" id="pseudo-panel"><div class="pseudo-line" id="pl-0">
+      <span class="ln">1</span>
+      <span class="code">HUFFMAN(text):</span>
+      <div class="tooltip-text">Entry point: receive input text</div>
+    </div><div class="pseudo-line" id="pl-1">
+      <span class="ln">2</span>
+      <span class="code">  freq = COUNT_FREQ(text)</span>
+      <div class="tooltip-text">Count how many times each character appears — O(n)</div>
+    </div><div class="pseudo-line" id="pl-2">
+      <span class="ln">3</span>
+      <span class="code">  Q = BUILD_MIN_HEAP(freq)</span>
+      <div class="tooltip-text">Create a min-heap with one leaf node per character — O(n)</div>
+    </div><div class="pseudo-line" id="pl-3">
+      <span class="ln">4</span>
+      <span class="code">  while |Q| &gt; 1:</span>
+      <div class="tooltip-text">Repeat until only the root remains — runs n-1 times</div>
+    </div><div class="pseudo-line" id="pl-4">
+      <span class="ln">5</span>
+      <span class="code">    x = EXTRACT_MIN(Q)</span>
+      <div class="tooltip-text">Remove node with smallest frequency — O(log n)</div>
+    </div><div class="pseudo-line" id="pl-5">
+      <span class="ln">6</span>
+      <span class="code">    y = EXTRACT_MIN(Q)</span>
+      <div class="tooltip-text">Remove second smallest frequency — O(log n)</div>
+    </div><div class="pseudo-line" id="pl-6">
+      <span class="ln">7</span>
+      <span class="code">    z = NEW_NODE()</span>
+      <div class="tooltip-text">Create a new internal node</div>
+    </div><div class="pseudo-line" id="pl-7">
+      <span class="ln">8</span>
+      <span class="code">    z.freq = x.freq + y.freq</span>
+      <div class="tooltip-text">Sum the frequencies of the two children</div>
+    </div><div class="pseudo-line" id="pl-8">
+      <span class="ln">9</span>
+      <span class="code">    z.left = x; z.right = y</span>
+      <div class="tooltip-text">Attach x as left child, y as right child</div>
+    </div><div class="pseudo-line" id="pl-9">
+      <span class="ln">10</span>
+      <span class="code">    INSERT(Q, z)</span>
+      <div class="tooltip-text">Insert merged node back into heap — O(log n)</div>
+    </div><div class="pseudo-line" id="pl-10">
+      <span class="ln">11</span>
+      <span class="code">  root = EXTRACT_MIN(Q)</span>
+      <div class="tooltip-text">Final node is the root of the Huffman tree</div>
+    </div><div class="pseudo-line" id="pl-11">
+      <span class="ln">12</span>
+      <span class="code">  ASSIGN_CODES(root, "")</span>
+      <div class="tooltip-text">Traverse tree, assigning 0 for left, 1 for right edges</div>
+    </div><div class="pseudo-line active" id="pl-12">
+      <span class="ln">13</span>
+      <span class="code">  return codes</span>
+      <div class="tooltip-text">Return the mapping of characters to binary codes</div>
+    </div></div>
+    </div>
+
+    <!-- Step Explanation -->
+    <div class="section">
+      <div class="section-title">Step Explanation</div>
+      <div id="step-box">Done! Codes assigned. Encoded "abracadabra" uses <b>23 bits</b> vs <b>88 bits</b> (fixed).</div>
+    </div>
+
+    <!-- History Table -->
+    <div class="section">
+      <div class="section-title">History</div>
+      <div class="history-wrap">
+        <table>
+          <thead>
+            <tr><th>#</th><th>Action</th><th>Nodes</th><th>Result</th></tr>
+          </thead>
+          <tbody id="history-body"><tr onclick="jumpToStep(3)" class="">
+      <td>4</td>
+      <td class="extract">extract</td>
+      <td>c</td>
+      <td>0 merges</td>
+    </tr><tr onclick="jumpToStep(4)" class="">
+      <td>5</td>
+      <td class="extract">extract</td>
+      <td> + d</td>
+      <td>0 merges</td>
+    </tr><tr onclick="jumpToStep(5)" class="">
+      <td>6</td>
+      <td class="merge">merge</td>
+      <td>c + d</td>
+      <td>1 merges</td>
+    </tr><tr onclick="jumpToStep(6)" class="">
+      <td>7</td>
+      <td class="merge">merge</td>
+      <td></td>
+      <td>1 merges</td>
+    </tr><tr onclick="jumpToStep(7)" class="">
+      <td>8</td>
+      <td class="merge">merge</td>
+      <td></td>
+      <td>1 merges</td>
+    </tr><tr onclick="jumpToStep(8)" class="">
+      <td>9</td>
+      <td class="insert">insert</td>
+      <td></td>
+      <td>1 merges</td>
+    </tr><tr onclick="jumpToStep(9)" class="">
+      <td>10</td>
+      <td class="check">check</td>
+      <td></td>
+      <td>1 merges</td>
+    </tr><tr onclick="jumpToStep(10)" class="">
+      <td>11</td>
+      <td class="extract">extract</td>
+      <td>_merge1</td>
+      <td>1 merges</td>
+    </tr><tr onclick="jumpToStep(11)" class="">
+      <td>12</td>
+      <td class="extract">extract</td>
+      <td> + b</td>
+      <td>1 merges</td>
+    </tr><tr onclick="jumpToStep(12)" class="">
+      <td>13</td>
+      <td class="merge">merge</td>
+      <td>_merge1 + b</td>
+      <td>2 merges</td>
+    </tr><tr onclick="jumpToStep(13)" class="">
+      <td>14</td>
+      <td class="merge">merge</td>
+      <td></td>
+      <td>2 merges</td>
+    </tr><tr onclick="jumpToStep(14)" class="">
+      <td>15</td>
+      <td class="merge">merge</td>
+      <td></td>
+      <td>2 merges</td>
+    </tr><tr onclick="jumpToStep(15)" class="">
+      <td>16</td>
+      <td class="insert">insert</td>
+      <td></td>
+      <td>2 merges</td>
+    </tr><tr onclick="jumpToStep(16)" class="">
+      <td>17</td>
+      <td class="check">check</td>
+      <td></td>
+      <td>2 merges</td>
+    </tr><tr onclick="jumpToStep(17)" class="">
+      <td>18</td>
+      <td class="extract">extract</td>
+      <td>r</td>
+      <td>2 merges</td>
+    </tr><tr onclick="jumpToStep(18)" class="">
+      <td>19</td>
+      <td class="extract">extract</td>
+      <td> + _merge2</td>
+      <td>2 merges</td>
+    </tr><tr onclick="jumpToStep(19)" class="">
+      <td>20</td>
+      <td class="merge">merge</td>
+      <td>r + _merge2</td>
+      <td>3 merges</td>
+    </tr><tr onclick="jumpToStep(20)" class="">
+      <td>21</td>
+      <td class="merge">merge</td>
+      <td></td>
+      <td>3 merges</td>
+    </tr><tr onclick="jumpToStep(21)" class="">
+      <td>22</td>
+      <td class="merge">merge</td>
+      <td></td>
+      <td>3 merges</td>
+    </tr><tr onclick="jumpToStep(22)" class="">
+      <td>23</td>
+      <td class="insert">insert</td>
+      <td></td>
+      <td>3 merges</td>
+    </tr><tr onclick="jumpToStep(23)" class="">
+      <td>24</td>
+      <td class="check">check</td>
+      <td></td>
+      <td>3 merges</td>
+    </tr><tr onclick="jumpToStep(24)" class="">
+      <td>25</td>
+      <td class="extract">extract</td>
+      <td>a</td>
+      <td>3 merges</td>
+    </tr><tr onclick="jumpToStep(25)" class="">
+      <td>26</td>
+      <td class="extract">extract</td>
+      <td> + _merge3</td>
+      <td>3 merges</td>
+    </tr><tr onclick="jumpToStep(26)" class="">
+      <td>27</td>
+      <td class="merge">merge</td>
+      <td>a + _merge3</td>
+      <td>4 merges</td>
+    </tr><tr onclick="jumpToStep(27)" class="">
+      <td>28</td>
+      <td class="merge">merge</td>
+      <td></td>
+      <td>4 merges</td>
+    </tr><tr onclick="jumpToStep(28)" class="">
+      <td>29</td>
+      <td class="merge">merge</td>
+      <td></td>
+      <td>4 merges</td>
+    </tr><tr onclick="jumpToStep(29)" class="">
+      <td>30</td>
+      <td class="insert">insert</td>
+      <td></td>
+      <td>4 merges</td>
+    </tr><tr onclick="jumpToStep(30)" class="">
+      <td>31</td>
+      <td class="done">done</td>
+      <td></td>
+      <td>4 merges</td>
+    </tr><tr onclick="jumpToStep(31)" class="">
+      <td>32</td>
+      <td class="codes">codes</td>
+      <td></td>
+      <td>4 merges</td>
+    </tr><tr onclick="jumpToStep(32)" class="active-row">
+      <td>33</td>
+      <td class="done">done</td>
+      <td></td>
+      <td>4 merges</td>
+    </tr></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="right-panel">
+    <div class="viz-tabs">
+      <div class="viz-tab active" onclick="showTab(&#39;tree&#39;)">🌳 Huffman Tree</div>
+      <div class="viz-tab" onclick="showTab(&#39;heap&#39;)">📊 Min-Heap</div>
+      <div class="viz-tab" onclick="showTab(&#39;combined&#39;)" style="color:var(--teal);font-weight:600">🌳+📊 Combined</div>
+      <div class="viz-tab" onclick="showTab(&#39;encode&#39;)">🔢 Encode/Decode</div>
+      <div class="viz-tab" onclick="showTab(&#39;complexity&#39;)">📈 Complexity</div>
+      <div class="viz-tab" onclick="showTab(&#39;greedy&#39;)">⚡ Greedy</div>
+      <div class="viz-tab" onclick="showTab(&#39;edu&#39;)">📚 Learn</div>
+    </div>
+
+    <div class="viz-content">
+
+      <!-- TREE TAB -->
+      <div class="viz-pane active" id="tab-tree">
+        <div id="tree-svg-wrap">
+          <svg id="tree-svg" viewBox="0 0 800 460"><line x1="400" y1="60" x2="200" y2="140" stroke="#30363d" stroke-width="1.5" class="huff-edge"></line><text x="292" y="100" fill="#8b949e" font-size="12" font-family="monospace">0</text><line x1="400" y1="60" x2="600" y2="140" stroke="#30363d" stroke-width="1.5" class="huff-edge"></line><text x="504" y="100" fill="#8b949e" font-size="12" font-family="monospace">1</text><line x1="600" y1="140" x2="500" y2="220" stroke="#30363d" stroke-width="1.5" class="huff-edge"></line><text x="542" y="180" fill="#8b949e" font-size="12" font-family="monospace">0</text><line x1="600" y1="140" x2="700" y2="220" stroke="#30363d" stroke-width="1.5" class="huff-edge"></line><text x="654" y="180" fill="#8b949e" font-size="12" font-family="monospace">1</text><line x1="700" y1="220" x2="650" y2="300" stroke="#30363d" stroke-width="1.5" class="huff-edge"></line><text x="667" y="260" fill="#8b949e" font-size="12" font-family="monospace">0</text><line x1="700" y1="220" x2="750" y2="300" stroke="#30363d" stroke-width="1.5" class="huff-edge"></line><text x="729" y="260" fill="#8b949e" font-size="12" font-family="monospace">1</text><line x1="650" y1="300" x2="625" y2="380" stroke="#30363d" stroke-width="1.5" class="huff-edge"></line><text x="629.5" y="340" fill="#8b949e" font-size="12" font-family="monospace">0</text><line x1="650" y1="300" x2="675" y2="380" stroke="#30363d" stroke-width="1.5" class="huff-edge"></line><text x="666.5" y="340" fill="#8b949e" font-size="12" font-family="monospace">1</text><g class="huff-node" transform="translate(400,60)">
+      <circle r="26" fill="#1c2430" stroke="#bc8cff" stroke-width="2"></circle>
+      <text y="5" text-anchor="middle" fill="#bc8cff" font-size="13" font-weight="bold">11</text>
+    </g><g class="huff-node" transform="translate(200,140)">
+      <circle r="26" fill="#1b3a2d" stroke="#3fb950" stroke-width="2"></circle>
+      <text y="-6" text-anchor="middle" fill="#f0e060" font-size="13" font-weight="bold">a</text>
+           <text y="8" text-anchor="middle" fill="#3fb950" font-size="11">5</text>
+           <text y="20" text-anchor="middle" fill="#8b949e" font-size="9">0</text>
+    </g><g class="huff-node" transform="translate(600,140)">
+      <circle r="26" fill="#1c2430" stroke="#bc8cff" stroke-width="2"></circle>
+      <text y="5" text-anchor="middle" fill="#bc8cff" font-size="13" font-weight="bold">6</text>
+    </g><g class="huff-node" transform="translate(500,220)">
+      <circle r="26" fill="#1b3a2d" stroke="#3fb950" stroke-width="2"></circle>
+      <text y="-6" text-anchor="middle" fill="#f0e060" font-size="13" font-weight="bold">r</text>
+           <text y="8" text-anchor="middle" fill="#3fb950" font-size="11">2</text>
+           <text y="20" text-anchor="middle" fill="#8b949e" font-size="9">10</text>
+    </g><g class="huff-node" transform="translate(700,220)">
+      <circle r="26" fill="#1c2430" stroke="#bc8cff" stroke-width="2"></circle>
+      <text y="5" text-anchor="middle" fill="#bc8cff" font-size="13" font-weight="bold">4</text>
+    </g><g class="huff-node" transform="translate(650,300)">
+      <circle r="26" fill="#1c2430" stroke="#bc8cff" stroke-width="2"></circle>
+      <text y="5" text-anchor="middle" fill="#bc8cff" font-size="13" font-weight="bold">2</text>
+    </g><g class="huff-node" transform="translate(625,380)">
+      <circle r="26" fill="#1b3a2d" stroke="#3fb950" stroke-width="2"></circle>
+      <text y="-6" text-anchor="middle" fill="#f0e060" font-size="13" font-weight="bold">c</text>
+           <text y="8" text-anchor="middle" fill="#3fb950" font-size="11">1</text>
+           <text y="20" text-anchor="middle" fill="#8b949e" font-size="9">1100</text>
+    </g><g class="huff-node" transform="translate(675,380)">
+      <circle r="26" fill="#1b3a2d" stroke="#3fb950" stroke-width="2"></circle>
+      <text y="-6" text-anchor="middle" fill="#f0e060" font-size="13" font-weight="bold">d</text>
+           <text y="8" text-anchor="middle" fill="#3fb950" font-size="11">1</text>
+           <text y="20" text-anchor="middle" fill="#8b949e" font-size="9">1101</text>
+    </g><g class="huff-node" transform="translate(750,300)">
+      <circle r="26" fill="#1b3a2d" stroke="#3fb950" stroke-width="2"></circle>
+      <text y="-6" text-anchor="middle" fill="#f0e060" font-size="13" font-weight="bold">b</text>
+           <text y="8" text-anchor="middle" fill="#3fb950" font-size="11">2</text>
+           <text y="20" text-anchor="middle" fill="#8b949e" font-size="9">111</text>
+    </g></svg>
+        </div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#58a6ff"></div> Internal Node</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#3fb950"></div> Leaf (Character)</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#f85149"></div> Currently Merging</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#d29922"></div> Just Extracted</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#bc8cff"></div> Final Tree</div>
+        </div>
+      </div>
+
+      <!-- HEAP TAB -->
+      <div class="viz-pane" id="tab-heap">
+        <div id="heap-svg-wrap">
+          <svg id="heap-svg" viewBox="0 0 800 340"><g class="heap-bar">
+      <rect x="368" y="80" width="60" height="200" rx="4" fill="#58a6ff" opacity="0.85"></rect>
+      <text x="398" y="74" text-anchor="middle" fill="#e6edf3" font-size="12" font-family="monospace">11</text>
+      <text x="398" y="296" text-anchor="middle" fill="#f0e060" font-size="12" font-family="monospace">∅</text>
+    </g><text x="10" y="315" fill="#484f58" font-size="10">Index (min-heap order):</text><text x="398" y="326" text-anchor="middle" fill="#484f58" font-size="10">0</text></svg>
+        </div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#58a6ff"></div> In Heap</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#f85149"></div> Being Extracted</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#3fb950"></div> Merged / Inserted</div>
+        </div>
+      </div>
+
+      <!-- COMBINED TAB: Tree on top, Heap on bottom -->
+      <div class="viz-pane" id="tab-combined">
+        <div class="combined-top">
+          <div class="combined-label">🌳 Huffman Tree</div>
+          <div id="tree-svg-wrap-combined">
+            <svg id="tree-svg-combined" viewBox="0 0 800 460" height="1224" style="height: 1224px;"><line x1="400" y1="60" x2="200" y2="140" stroke="#30363d" stroke-width="1.5" class="huff-edge"></line><text x="292" y="100" fill="#8b949e" font-size="12" font-family="monospace">0</text><line x1="400" y1="60" x2="600" y2="140" stroke="#30363d" stroke-width="1.5" class="huff-edge"></line><text x="504" y="100" fill="#8b949e" font-size="12" font-family="monospace">1</text><line x1="600" y1="140" x2="500" y2="220" stroke="#30363d" stroke-width="1.5" class="huff-edge"></line><text x="542" y="180" fill="#8b949e" font-size="12" font-family="monospace">0</text><line x1="600" y1="140" x2="700" y2="220" stroke="#30363d" stroke-width="1.5" class="huff-edge"></line><text x="654" y="180" fill="#8b949e" font-size="12" font-family="monospace">1</text><line x1="700" y1="220" x2="650" y2="300" stroke="#30363d" stroke-width="1.5" class="huff-edge"></line><text x="667" y="260" fill="#8b949e" font-size="12" font-family="monospace">0</text><line x1="700" y1="220" x2="750" y2="300" stroke="#30363d" stroke-width="1.5" class="huff-edge"></line><text x="729" y="260" fill="#8b949e" font-size="12" font-family="monospace">1</text><line x1="650" y1="300" x2="625" y2="380" stroke="#30363d" stroke-width="1.5" class="huff-edge"></line><text x="629.5" y="340" fill="#8b949e" font-size="12" font-family="monospace">0</text><line x1="650" y1="300" x2="675" y2="380" stroke="#30363d" stroke-width="1.5" class="huff-edge"></line><text x="666.5" y="340" fill="#8b949e" font-size="12" font-family="monospace">1</text><g class="huff-node" transform="translate(400,60)">
+      <circle r="26" fill="#1c2430" stroke="#bc8cff" stroke-width="2"></circle>
+      <text y="5" text-anchor="middle" fill="#bc8cff" font-size="13" font-weight="bold">11</text>
+    </g><g class="huff-node" transform="translate(200,140)">
+      <circle r="26" fill="#1b3a2d" stroke="#3fb950" stroke-width="2"></circle>
+      <text y="-6" text-anchor="middle" fill="#f0e060" font-size="13" font-weight="bold">a</text>
+           <text y="8" text-anchor="middle" fill="#3fb950" font-size="11">5</text>
+           <text y="20" text-anchor="middle" fill="#8b949e" font-size="9">0</text>
+    </g><g class="huff-node" transform="translate(600,140)">
+      <circle r="26" fill="#1c2430" stroke="#bc8cff" stroke-width="2"></circle>
+      <text y="5" text-anchor="middle" fill="#bc8cff" font-size="13" font-weight="bold">6</text>
+    </g><g class="huff-node" transform="translate(500,220)">
+      <circle r="26" fill="#1b3a2d" stroke="#3fb950" stroke-width="2"></circle>
+      <text y="-6" text-anchor="middle" fill="#f0e060" font-size="13" font-weight="bold">r</text>
+           <text y="8" text-anchor="middle" fill="#3fb950" font-size="11">2</text>
+           <text y="20" text-anchor="middle" fill="#8b949e" font-size="9">10</text>
+    </g><g class="huff-node" transform="translate(700,220)">
+      <circle r="26" fill="#1c2430" stroke="#bc8cff" stroke-width="2"></circle>
+      <text y="5" text-anchor="middle" fill="#bc8cff" font-size="13" font-weight="bold">4</text>
+    </g><g class="huff-node" transform="translate(650,300)">
+      <circle r="26" fill="#1c2430" stroke="#bc8cff" stroke-width="2"></circle>
+      <text y="5" text-anchor="middle" fill="#bc8cff" font-size="13" font-weight="bold">2</text>
+    </g><g class="huff-node" transform="translate(625,380)">
+      <circle r="26" fill="#1b3a2d" stroke="#3fb950" stroke-width="2"></circle>
+      <text y="-6" text-anchor="middle" fill="#f0e060" font-size="13" font-weight="bold">c</text>
+           <text y="8" text-anchor="middle" fill="#3fb950" font-size="11">1</text>
+           <text y="20" text-anchor="middle" fill="#8b949e" font-size="9">1100</text>
+    </g><g class="huff-node" transform="translate(675,380)">
+      <circle r="26" fill="#1b3a2d" stroke="#3fb950" stroke-width="2"></circle>
+      <text y="-6" text-anchor="middle" fill="#f0e060" font-size="13" font-weight="bold">d</text>
+           <text y="8" text-anchor="middle" fill="#3fb950" font-size="11">1</text>
+           <text y="20" text-anchor="middle" fill="#8b949e" font-size="9">1101</text>
+    </g><g class="huff-node" transform="translate(750,300)">
+      <circle r="26" fill="#1b3a2d" stroke="#3fb950" stroke-width="2"></circle>
+      <text y="-6" text-anchor="middle" fill="#f0e060" font-size="13" font-weight="bold">b</text>
+           <text y="8" text-anchor="middle" fill="#3fb950" font-size="11">2</text>
+           <text y="20" text-anchor="middle" fill="#8b949e" font-size="9">111</text>
+    </g></svg>
+          </div>
+          <div class="combined-legend">
+            <div class="legend-item"><div class="legend-dot" style="background:#58a6ff"></div> Internal Node</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#3fb950"></div> Leaf (Character)</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#f85149"></div> Currently Merging</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#d29922"></div> Just Extracted</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#bc8cff"></div> Final Tree</div>
+          </div>
+        </div>
+        <div class="combined-bottom">
+          <div class="combined-label">📊 Min-Heap</div>
+          <div id="heap-svg-wrap-combined">
+            <svg id="heap-svg-combined" viewBox="0 0 800 340" height="904" style="height: 904px;"><g class="heap-bar">
+      <rect x="368" y="80" width="60" height="200" rx="4" fill="#58a6ff" opacity="0.85"></rect>
+      <text x="398" y="74" text-anchor="middle" fill="#e6edf3" font-size="12" font-family="monospace">11</text>
+      <text x="398" y="296" text-anchor="middle" fill="#f0e060" font-size="12" font-family="monospace">∅</text>
+    </g><text x="10" y="315" fill="#484f58" font-size="10">Index (min-heap order):</text><text x="398" y="326" text-anchor="middle" fill="#484f58" font-size="10">0</text></svg>
+          </div>
+          <div class="combined-legend">
+            <div class="legend-item"><div class="legend-dot" style="background:#58a6ff"></div> In Heap</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#f85149"></div> Being Extracted</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#3fb950"></div> Merged / Inserted</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ENCODE TAB -->
+      <div class="viz-pane" id="tab-encode">
+        <div class="encode-panel">
+          <div>
+            <div class="section-title" style="margin-bottom:8px">Huffman Codes</div>
+            <div class="code-table-wrap">
+              <table>
+                <thead><tr><th>Char</th><th>Freq</th><th>Code</th><th>Bits</th><th>Fixed (8-bit)</th></tr></thead>
+                <tbody id="code-table-body"><tr>
+        <td class="char">c</td>
+        <td>1</td>
+        <td class="bits">1100</td>
+        <td>4</td>
+        <td class="savings">8 → 4 (50% less)</td>
+      </tr><tr>
+        <td class="char">d</td>
+        <td>1</td>
+        <td class="bits">1101</td>
+        <td>4</td>
+        <td class="savings">8 → 4 (50% less)</td>
+      </tr><tr>
+        <td class="char">b</td>
+        <td>2</td>
+        <td class="bits">111</td>
+        <td>3</td>
+        <td class="savings">16 → 6 (63% less)</td>
+      </tr><tr>
+        <td class="char">r</td>
+        <td>2</td>
+        <td class="bits">10</td>
+        <td>2</td>
+        <td class="savings">16 → 4 (75% less)</td>
+      </tr><tr>
+        <td class="char">a</td>
+        <td>5</td>
+        <td class="bits">0</td>
+        <td>1</td>
+        <td class="savings">40 → 5 (88% less)</td>
+      </tr></tbody>
+              </table>
+            </div>
+          </div>
+          <div>
+            <div class="section-title" style="margin-bottom:6px">Encode Text</div>
+            <textarea id="encode-input" rows="3" placeholder="Type text to encode...">abracadabra</textarea>
+            <button class="btn primary" style="margin-top:6px" onclick="encodeText()">Encode →</button>
+            <div class="encode-result" id="encode-output" style="margin-top:8px">—</div>
+            <div id="encode-stats" style="margin-top:6px; font-size:12px; color:var(--muted)"></div>
+          </div>
+          <div>
+            <div class="section-title" style="margin-bottom:6px">Decode Binary</div>
+            <textarea id="decode-input" rows="3" placeholder="Paste binary string..."></textarea>
+            <button class="btn primary" style="margin-top:6px" onclick="decodeText()">← Decode</button>
+            <div class="decode-result" id="decode-output" style="margin-top:8px">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- COMPLEXITY TAB -->
+      <div class="viz-pane" id="tab-complexity">
+        <div class="complexity-panel">
+          <div class="complexity-controls">
+            <label>Max n: <strong id="n-label">20</strong></label>
+            <input type="range" id="n-slider" min="5" max="50" value="20" oninput="updateComplexityChart(this.value)">
+            <button class="btn" onclick="toggleAlgo()" id="btn-toggle-algo">Hide Comparisons</button>
+          </div>
+          <svg id="complexity-chart" viewBox="0 0 900 220" style="width:100%;height:auto;display:block"><line x1="62" y1="58.5" x2="876" y2="58.5" stroke="#21262d" stroke-width="1"></line><text x="55.0" y="62.5" text-anchor="end" fill="#484f58" font-size="12">300</text><line x1="62" y1="101.0" x2="876" y2="101.0" stroke="#21262d" stroke-width="1"></line><text x="55.0" y="105.0" text-anchor="end" fill="#484f58" font-size="12">200</text><line x1="62" y1="143.5" x2="876" y2="143.5" stroke="#21262d" stroke-width="1"></line><text x="55.0" y="147.5" text-anchor="end" fill="#484f58" font-size="12">100</text><line x1="62" y1="186.0" x2="876" y2="186.0" stroke="#21262d" stroke-width="1"></line><text x="55.0" y="190.0" text-anchor="end" fill="#484f58" font-size="12">0</text><text x="62.0" y="203.0" text-anchor="middle" fill="#484f58" font-size="12">1</text><text x="147.7" y="203.0" text-anchor="middle" fill="#484f58" font-size="12">3</text><text x="233.4" y="203.0" text-anchor="middle" fill="#484f58" font-size="12">5</text><text x="319.1" y="203.0" text-anchor="middle" fill="#484f58" font-size="12">7</text><text x="404.7" y="203.0" text-anchor="middle" fill="#484f58" font-size="12">9</text><text x="490.4" y="203.0" text-anchor="middle" fill="#484f58" font-size="12">11</text><text x="576.1" y="203.0" text-anchor="middle" fill="#484f58" font-size="12">13</text><text x="661.8" y="203.0" text-anchor="middle" fill="#484f58" font-size="12">15</text><text x="747.5" y="203.0" text-anchor="middle" fill="#484f58" font-size="12">17</text><text x="833.2" y="203.0" text-anchor="middle" fill="#484f58" font-size="12">19</text><line x1="62" y1="16" x2="62" y2="186" stroke="#484f58" stroke-width="1.5"></line><line x1="62" y1="186" x2="876" y2="186" stroke="#484f58" stroke-width="1.5"></line><polyline points="62.0,185.6 104.8,185.2 147.7,184.0 190.5,182.6 233.4,181.1 276.2,179.4 319.1,177.6 361.9,175.8 404.7,173.9 447.6,171.9 490.4,169.8 533.3,167.7 576.1,165.6 618.9,163.3 661.8,161.1 704.6,158.8 747.5,156.5 790.3,154.1 833.2,151.7 876.0,149.3" fill="none" stroke="#58a6ff" stroke-width="2.5" stroke-linejoin="round"></polyline><polyline points="62.0,185.6 104.8,184.3 147.7,182.2 190.5,179.2 233.4,175.4 276.2,170.7 319.1,165.2 361.9,158.8 404.7,151.6 447.6,143.5 490.4,134.6 533.3,124.8 576.1,114.2 618.9,102.7 661.8,90.4 704.6,77.2 747.5,63.2 790.3,48.3 833.2,32.6 876.0,16.0" fill="none" stroke="#f85149" stroke-width="2.5" stroke-dasharray="7,4" stroke-linejoin="round"></polyline><polyline points="62.0,185.6 104.8,185.2 147.7,184.7 190.5,184.3 233.4,183.9 276.2,183.4 319.1,183.0 361.9,182.6 404.7,182.2 447.6,181.8 490.4,181.3 533.3,180.9 576.1,180.5 618.9,180.1 661.8,179.6 704.6,179.2 747.5,178.8 790.3,178.3 833.2,177.9 876.0,177.5" fill="none" stroke="#3fb950" stroke-width="2.5" stroke-dasharray="4,3" stroke-linejoin="round"></polyline><text x="469.0" y="217.0" text-anchor="middle" fill="#8b949e" font-size="13">n (distinct characters)</text><text x="14" y="101.0" text-anchor="middle" fill="#8b949e" font-size="13" transform="rotate(-90,14,101.0)">Operations</text><rect x="66" y="18" width="230" height="72" rx="5" fill="#161b22" stroke="#30363d" stroke-width="1" opacity="0.95"></rect><line x1="76" y1="32" x2="100" y2="32" stroke="#58a6ff" stroke-width="2.5"></line><text x="106" y="37" fill="#58a6ff" font-size="13" font-family="&#39;Courier New&#39;,monospace">Huffman — O(n log n)</text><line x1="76" y1="54" x2="100" y2="54" stroke="#f85149" stroke-width="2.5" stroke-dasharray="7,4"></line><text x="106" y="59" fill="#f85149" font-size="13" font-family="&#39;Courier New&#39;,monospace">Shannon-Fano — O(n²)</text><line x1="76" y1="76" x2="100" y2="76" stroke="#3fb950" stroke-width="2.5" stroke-dasharray="4,3"></line><text x="106" y="81" fill="#3fb950" font-size="13" font-family="&#39;Courier New&#39;,monospace">Arithmetic Coding — O(n)</text></svg>
+          <div class="complexity-table">
+            <table>
+              <colgroup>
+                <col style="width:24%">
+                <col style="width:19%">
+                <col style="width:19%">
+                <col style="width:19%">
+                <col style="width:19%">
+              </colgroup>
+              <thead><tr><th>Algorithm</th><th>Best Case</th><th>Average Case</th><th>Worst Case</th><th>Space</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td>Huffman Coding</td>
+                  <td class="big-o">O(n log n)</td>
+                  <td class="big-o">O(n log n)</td>
+                  <td class="big-o">O(n log n)</td>
+                  <td class="big-o">O(n)</td>
+                </tr>
+                <tr>
+                  <td>Shannon-Fano</td>
+                  <td class="big-o">O(n log n)</td>
+                  <td class="big-o">O(n log n)</td>
+                  <td class="big-o">O(n²)</td>
+                  <td class="big-o">O(n)</td>
+                </tr>
+                <tr>
+                  <td>Arithmetic Coding</td>
+                  <td class="big-o">O(n)</td>
+                  <td class="big-o">O(n)</td>
+                  <td class="big-o">O(n)</td>
+                  <td class="big-o">O(n)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="concept-box warning" style="font-size:14px;line-height:1.7;padding:14px 18px">
+            <strong style="font-size:15px;display:block;margin-bottom:6px">⚠ Worst Case for Huffman</strong>
+            Huffman Coding's complexity is always O(n log n) — there is no asymptotically worse case. However, the <em>compression ratio</em> is worst when all n characters have equal frequency: every code gets the same length, giving zero benefit over fixed-length encoding. The tree becomes perfectly balanced, and you still pay for all n−1 merge operations.
+          </div>
+        </div>
+      </div>
+
+      <!-- GREEDY TAB -->
+      <div class="viz-pane" id="tab-greedy">
+        <div class="greedy-panel">
+          <div class="concept-box">
+            <strong>⚡ Greedy Paradigm</strong>
+            Huffman Coding is a <em>greedy algorithm</em>. At each step, it makes the locally optimal choice: always merge the two nodes with the <em>smallest frequencies</em>. This greedy choice property guarantees a globally optimal prefix-free code.
+          </div>
+          <div class="section-title">Greedy Choices Made</div>
+          <div class="greedy-step-list" id="greedy-steps"><div class="greedy-step done" id="gs-0">
+      <div class="step-num">1</div>
+      <div>
+        <div style="font-size:13px;font-weight:600">Greedy Choice #1</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:3px">Create internal node with frequency 1 + 1 = 2.</div>
+      </div>
+    </div><div class="greedy-step done" id="gs-1">
+      <div class="step-num">2</div>
+      <div>
+        <div style="font-size:13px;font-weight:600">Greedy Choice #2</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:3px">Set merged node frequency = 2.</div>
+      </div>
+    </div><div class="greedy-step done" id="gs-2">
+      <div class="step-num">3</div>
+      <div>
+        <div style="font-size:13px;font-weight:600">Greedy Choice #3</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:3px">Attach "c" as left child, "d" as right child.</div>
+      </div>
+    </div><div class="greedy-step done" id="gs-3">
+      <div class="step-num">4</div>
+      <div>
+        <div style="font-size:13px;font-weight:600">Greedy Choice #4</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:3px">Create internal node with frequency 2 + 2 = 4.</div>
+      </div>
+    </div><div class="greedy-step done" id="gs-4">
+      <div class="step-num">5</div>
+      <div>
+        <div style="font-size:13px;font-weight:600">Greedy Choice #5</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:3px">Set merged node frequency = 4.</div>
+      </div>
+    </div><div class="greedy-step done" id="gs-5">
+      <div class="step-num">6</div>
+      <div>
+        <div style="font-size:13px;font-weight:600">Greedy Choice #6</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:3px">Attach "∅" as left child, "b" as right child.</div>
+      </div>
+    </div><div class="greedy-step done" id="gs-6">
+      <div class="step-num">7</div>
+      <div>
+        <div style="font-size:13px;font-weight:600">Greedy Choice #7</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:3px">Create internal node with frequency 2 + 4 = 6.</div>
+      </div>
+    </div><div class="greedy-step done" id="gs-7">
+      <div class="step-num">8</div>
+      <div>
+        <div style="font-size:13px;font-weight:600">Greedy Choice #8</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:3px">Set merged node frequency = 6.</div>
+      </div>
+    </div><div class="greedy-step done" id="gs-8">
+      <div class="step-num">9</div>
+      <div>
+        <div style="font-size:13px;font-weight:600">Greedy Choice #9</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:3px">Attach "r" as left child, "∅" as right child.</div>
+      </div>
+    </div><div class="greedy-step done" id="gs-9">
+      <div class="step-num">10</div>
+      <div>
+        <div style="font-size:13px;font-weight:600">Greedy Choice #10</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:3px">Create internal node with frequency 5 + 6 = 11.</div>
+      </div>
+    </div><div class="greedy-step done" id="gs-10">
+      <div class="step-num">11</div>
+      <div>
+        <div style="font-size:13px;font-weight:600">Greedy Choice #11</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:3px">Set merged node frequency = 11.</div>
+      </div>
+    </div><div class="greedy-step current" id="gs-11">
+      <div class="step-num">12</div>
+      <div>
+        <div style="font-size:13px;font-weight:600">Greedy Choice #12</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:3px">Attach "a" as left child, "∅" as right child.</div>
+      </div>
+    </div></div>
+          <div class="concept-box warning" style="margin-top:8px">
+            <strong>What if we used a different paradigm?</strong>
+            If we used a random merge order (instead of greedy minimum), the resulting codes would be suboptimal — the total bits needed would be larger. For "abracadabra": greedy gives <strong id="greedy-bits">23</strong> bits, a random merge gives more.
+          </div>
+          <div class="concept-box success">
+            <strong>Proof of Optimality (Exchange Argument)</strong>
+            Suppose the two lowest-frequency symbols are x and y. In any optimal tree, x and y must be siblings at the deepest level — otherwise swapping them with deeper siblings would reduce total cost. Therefore, the greedy choice of always merging the minimum two is safe.
+          </div>
+        </div>
+      </div>
+
+      <!-- EDUCATION TAB -->
+      <div class="viz-pane" id="tab-edu">
+        <div class="edu-panel">
+          <div class="collapsible-section">
+            <div class="collapsible-header" onclick="toggleCollapse(this)">
+              📖 What is Huffman Coding? <span>▼</span>
+            </div>
+            <div class="collapsible-body open">
+              <p>Huffman Coding is a <strong>lossless data compression</strong> algorithm invented by David A. Huffman in 1952. It assigns variable-length binary codes to characters based on their frequency of occurrence.</p>
+              <p>Characters that appear more often get <strong>shorter codes</strong>; rare characters get longer codes. This is the opposite of fixed-length encoding (e.g., ASCII uses 8 bits per character regardless of frequency).</p>
+              <h4>When to use it:</h4>
+              <ul>
+                <li>Compressing text files (used in ZIP, GZIP)</li>
+                <li>Image compression (JPEG uses Huffman as a final step)</li>
+                <li>Any scenario where symbol frequencies vary greatly</li>
+              </ul>
+              <h4>Key property:</h4>
+              <p>Huffman codes are <strong>prefix-free</strong>: no code is a prefix of another, so they can be decoded unambiguously without separators.</p>
+            </div>
+          </div>
+
+          <div class="collapsible-section">
+            <div class="collapsible-header" onclick="toggleCollapse(this)">
+              🔍 How does the algorithm work? <span>▼</span>
+            </div>
+            <div class="collapsible-body">
+              <h4>Step-by-step:</h4>
+              <ul>
+                <li><strong>1. Count frequencies</strong> of each character in the input.</li>
+                <li><strong>2. Build a min-heap</strong> (priority queue) of leaf nodes, one per character.</li>
+                <li><strong>3. Repeat until one node remains:</strong>
+                  <ul>
+                    <li>Extract the two nodes with minimum frequency (extract-min twice).</li>
+                    <li>Create a new internal node with their sum as frequency.</li>
+                    <li>Insert the new node back into the heap.</li>
+                  </ul>
+                </li>
+                <li><strong>4. The remaining node is the root</strong> of the Huffman tree.</li>
+                <li><strong>5. Assign codes:</strong> traverse from root; left edge = 0, right edge = 1.</li>
+              </ul>
+              <h4>Complexity:</h4>
+              <p>With a binary min-heap: <strong>O(n log n)</strong> where n = number of distinct characters. Each of the n-1 merge steps requires two extract-min (O(log n)) and one insert (O(log n)).</p>
+            </div>
+          </div>
+
+          <div class="collapsible-section">
+            <div class="collapsible-header" onclick="toggleCollapse(this)">
+              📝 Worked Example: "abracadabra" <span>▼</span>
+            </div>
+            <div class="collapsible-body">
+              <h4>Frequencies:</h4>
+              <p>a=5, b=2, r=2, c=1, d=1</p>
+              <h4>Heap initially:</h4>
+              <p>[c:1, d:1, b:2, r:2, a:5]</p>
+              <h4>Step 1 — Merge c:1 and d:1:</h4>
+              <p>New node cd:2. Heap: [b:2, r:2, cd:2, a:5]</p>
+              <h4>Step 2 — Merge b:2 and r:2:</h4>
+              <p>New node br:4. Heap: [cd:2, a:5, br:4]</p>
+              <h4>Step 3 — Merge cd:2 and br:4:</h4>
+              <p>New node cdbr:6. Heap: [a:5, cdbr:6]</p>
+              <h4>Step 4 — Merge a:5 and cdbr:6:</h4>
+              <p>Root: 11. Tree complete!</p>
+              <h4>Resulting codes:</h4>
+              <p>a=0, b=110, r=111, c=100, d=101</p>
+              <p>Total bits = 5×1 + 2×3 + 2×3 + 1×3 + 1×3 = <strong>23 bits</strong> vs 11×8 = 88 bits fixed</p>
+            </div>
+          </div>
+
+          <div class="collapsible-section">
+            <div class="collapsible-header" onclick="toggleCollapse(this)">
+              ⚠ Common Mistakes <span>▼</span>
+            </div>
+            <div class="collapsible-body">
+              <div class="concept-box warning" style="margin:6px 0">
+                <strong>Mistake 1: Forgetting prefix-free property</strong>
+                Huffman codes are prefix-free by construction (path from root to leaf), but manually assigned codes might not be. Always build the tree properly.
+              </div>
+              <div class="concept-box warning" style="margin:6px 0">
+                <strong>Mistake 2: Using sorting instead of min-heap</strong>
+                If you re-sort after each merge, complexity becomes O(n²). The min-heap is essential for O(n log n).
+              </div>
+              <div class="concept-box warning" style="margin:6px 0">
+                <strong>Mistake 3: Huffman ≠ optimal for all cases</strong>
+                For uniform distributions (all equal frequencies), Huffman gives no compression advantage. Arithmetic coding can achieve better compression in those cases.
+              </div>
+            </div>
+          </div>
+
+          <div class="collapsible-section">
+            <div class="collapsible-header" onclick="toggleCollapse(this)">
+              🔗 CLO Coverage Summary <span>▼</span>
+            </div>
+            <div class="collapsible-body">
+              <div class="concept-box" style="margin-bottom:8px">
+                <strong>CLO-1: Asymptotic Analysis</strong>
+                See the Complexity tab. O(n log n) with min-heap. Growth chart shows actual vs theoretical operations. Worst case preset available.
+              </div>
+              <div class="concept-box" style="margin-bottom:8px">
+                <strong>CLO-2: Sorting &amp; Searching</strong>
+                The Min-Heap tab shows heap operations. "Search for minimum" is the extract-min at each step, highlighted in orange. Without the heap (using linear scan), complexity degrades to O(n²).
+              </div>
+              <div class="concept-box">
+                <strong>CLO-3: Greedy Paradigm</strong>
+                See the Greedy tab. Each greedy choice (merge two smallest) is animated. The exchange argument proof is shown. Comparison with random merge demonstrates suboptimality.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// DATA & STATE
+// ============================================================
+let inputText = 'abracadabra';
+let steps = [];         // array of state snapshots
+let currentStep = -1;
+let animTimer = null;
+let speedMs = 700;      // ms per step
+let huffCodes = {};     // final codes
+let showCompare = true;
+
+// Pseudocode lines with tooltips
+const PSEUDOCODE = [
+  { code: 'HUFFMAN(text):', tip: 'Entry point: receive input text' },
+  { code: '  freq = COUNT_FREQ(text)', tip: 'Count how many times each character appears — O(n)' },
+  { code: '  Q = BUILD_MIN_HEAP(freq)', tip: 'Create a min-heap with one leaf node per character — O(n)' },
+  { code: '  while |Q| > 1:', tip: 'Repeat until only the root remains — runs n-1 times' },
+  { code: '    x = EXTRACT_MIN(Q)', tip: 'Remove node with smallest frequency — O(log n)' },
+  { code: '    y = EXTRACT_MIN(Q)', tip: 'Remove second smallest frequency — O(log n)' },
+  { code: '    z = NEW_NODE()', tip: 'Create a new internal node' },
+  { code: '    z.freq = x.freq + y.freq', tip: 'Sum the frequencies of the two children' },
+  { code: '    z.left = x; z.right = y', tip: 'Attach x as left child, y as right child' },
+  { code: '    INSERT(Q, z)', tip: 'Insert merged node back into heap — O(log n)' },
+  { code: '  root = EXTRACT_MIN(Q)', tip: 'Final node is the root of the Huffman tree' },
+  { code: '  ASSIGN_CODES(root, "")', tip: 'Traverse tree, assigning 0 for left, 1 for right edges' },
+  { code: '  return codes', tip: 'Return the mapping of characters to binary codes' },
+];
+
+// ============================================================
+// INIT
+// ============================================================
+window.onload = function() {
+  renderPseudocode();
+  updateFreqDisplay();
+  drawEmptyTree();
+  updateComplexityChart(20);
+};
+
+function renderPseudocode() {
+  const panel = document.getElementById('pseudo-panel');
+  panel.innerHTML = PSEUDOCODE.map((line, i) =>
+    `<div class="pseudo-line" id="pl-${i}">
+      <span class="ln">${i+1}</span>
+      <span class="code">${escHtml(line.code)}</span>
+      <div class="tooltip-text">${line.tip}</div>
+    </div>`
+  ).join('');
+}
+
+function highlightPseudo(lineNum) {
+  document.querySelectorAll('.pseudo-line').forEach(el => el.classList.remove('active'));
+  if (lineNum >= 0) {
+    const el = document.getElementById(`pl-${lineNum}`);
+    if (el) {
+      el.classList.add('active');
+      el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  }
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ============================================================
+// INPUT & PRESETS
+// ============================================================
+function loadPreset(text) {
+  document.getElementById('text-input').value = text;
+  inputText = text;
+  updateFreqDisplay();
+  resetAll();
+}
+
+document.getElementById('text-input').addEventListener('input', function() {
+  inputText = this.value;
+  updateFreqDisplay();
+  resetAll();
+});
+
+function updateFreqDisplay() {
+  const text = document.getElementById('text-input').value || '';
+  const freq = countFreq(text);
+  const div = document.getElementById('freq-display');
+  div.innerHTML = Object.entries(freq)
+    .sort((a,b) => b[1]-a[1])
+    .map(([c,f]) => `<div class="freq-chip">${c==' '?'␣':c}:<span>${f}</span></div>`)
+    .join('');
+}
+
+function countFreq(text) {
+  const freq = {};
+  for (const c of text) freq[c] = (freq[c]||0) + 1;
+  return freq;
+}
+
+// ============================================================
+// HUFFMAN ALGORITHM + STEP GENERATION
+// ============================================================
+function buildSteps() {
+  inputText = document.getElementById('text-input').value || 'abracadabra';
+  if (!inputText) return;
+
+  steps = [];
+  huffCodes = {};
+
+  const freq = countFreq(inputText);
+  const n = Object.keys(freq).length;
+
+  // Build initial heap as array of node objects
+  let heap = Object.entries(freq).map(([char, f]) => ({
+    id: char,
+    char, freq: f, left: null, right: null,
+    isLeaf: true
+  }));
+
+  // Sort heap initially
+  heap.sort((a,b) => a.freq - b.freq);
+
+  let totalExtractions = 0, totalMerges = 0, totalComparisons = 0;
+  let nodeCounter = 0;
+
+  // Snapshot helper
+  function snap(pseudoLine, explanation, action, heapSnap, treeRoot, extras={}) {
+    steps.push({
+      pseudoLine,
+      explanation,
+      action,
+      heap: JSON.parse(JSON.stringify(heapSnap)),
+      treeRoot: treeRoot ? JSON.parse(JSON.stringify(treeRoot)) : null,
+      extractions: totalExtractions,
+      merges: totalMerges,
+      comparisons: totalComparisons,
+      highlight1: extras.h1 || null,
+      highlight2: extras.h2 || null,
+      ...extras
+    });
+  }
+
+  snap(1, 'Counting character frequencies in input text.', 'count', heap, null);
+  snap(2, `Building min-heap with ${heap.length} leaf nodes.`, 'build', heap, null);
+
+  let roots = [...heap];
+
+  while (roots.length > 1) {
+    snap(3, `Heap has ${roots.length} nodes — continue merging.`, 'check', roots, roots[0]);
+
+    // Extract min 1
+    totalExtractions++;
+    totalComparisons += Math.ceil(Math.log2(roots.length + 1));
+    const x = roots.shift();
+    snap(4, `Extract-min: node <b>"${x.char||'∅'}"</b> with frequency <b>${x.freq}</b>.`, 'extract', roots, x, {h1: x.id});
+
+    // Extract min 2
+    totalExtractions++;
+    totalComparisons += Math.ceil(Math.log2(roots.length + 1));
+    const y = roots.shift();
+    snap(5, `Extract-min: node <b>"${y.char||'∅'}"</b> with frequency <b>${y.freq}</b>.`, 'extract', roots, y, {h2: y.id});
+
+    // Create merged node
+    totalMerges++;
+    nodeCounter++;
+    const z = {
+      id: `_merge${nodeCounter}`,
+      char: null,
+      freq: x.freq + y.freq,
+      left: x,
+      right: y,
+      isLeaf: false
+    };
+
+    snap(6, `Create internal node with frequency <b>${x.freq} + ${y.freq} = ${z.freq}</b>.`, 'merge', roots, z, {h1: x.id, h2: y.id});
+    snap(7, `Set merged node frequency = <b>${z.freq}</b>.`, 'merge', roots, z);
+    snap(8, `Attach "${x.char||'∅'}" as left child, "${y.char||'∅'}" as right child.`, 'merge', roots, z);
+
+    // Insert back into heap (sorted position)
+    let inserted = false;
+    for (let i = 0; i < roots.length; i++) {
+      totalComparisons++;
+      if (z.freq <= roots[i].freq) {
+        roots.splice(i, 0, z);
+        inserted = true;
+        break;
+      }
+    }
+    if (!inserted) roots.push(z);
+
+    snap(9, `Insert merged node (freq=${z.freq}) back into heap. Heap size: ${roots.length}.`, 'insert', roots, z);
+  }
+
+  const root = roots[0];
+  snap(10, 'Only one node remains — this is the root of the Huffman tree!', 'done', roots, root);
+
+  // Generate codes
+  function assignCodes(node, code) {
+    if (!node) return;
+    if (node.isLeaf) {
+      huffCodes[node.char] = code || '0';
+      return;
+    }
+    assignCodes(node.left, code + '0');
+    assignCodes(node.right, code + '1');
+  }
+  assignCodes(root, '');
+
+  snap(11, 'Assigning codes: traverse tree — left edge = 0, right edge = 1.', 'codes', roots, root);
+
+  // Calculate bits
+  let totalBits = 0;
+  for (const [c, f] of Object.entries(freq)) {
+    totalBits += f * (huffCodes[c]||'0').length;
+  }
+
+  snap(12, `Done! Codes assigned. Encoded "${inputText}" uses <b>${totalBits} bits</b> vs <b>${inputText.length*8} bits</b> (fixed).`, 'done', roots, root);
+
+  currentStep = -1;
+  setStatus('ready');
+  document.getElementById('step-counter').textContent = `Step 0 / ${steps.length}`;
+  document.getElementById('btn-step').disabled = false;
+  document.getElementById('btn-play').disabled = false;
+  document.getElementById('btn-pause').disabled = true;
+
+  // Update encode tab
+  renderCodeTable(freq, root);
+  document.getElementById('encode-input').value = inputText;
+
+  // Update greedy tab
+  renderGreedySteps();
+
+  document.getElementById('stat-bits').textContent = totalBits;
+
+  // Draw initial heap
+  drawHeap(steps[0].heap, null, null);
+  drawEmptyTree();
+  showTab('tree');
+}
+
+// ============================================================
+// PLAYBACK CONTROLS
+// ============================================================
+function stepForward() {
+  if (currentStep < steps.length - 1) {
+    currentStep++;
+    applyStep(currentStep);
+  }
+  if (currentStep >= steps.length - 1) {
+    setStatus('done');
+    document.getElementById('btn-play').disabled = true;
+  }
+}
+
+function playAnim() {
+  if (currentStep >= steps.length - 1) return;
+  setStatus('playing');
+  document.getElementById('btn-play').disabled = true;
+  document.getElementById('btn-pause').disabled = false;
+  animTimer = setInterval(() => {
+    if (currentStep >= steps.length - 1) {
+      pauseAnim();
+      setStatus('done');
+      return;
+    }
+    stepForward();
+  }, speedMs);
+}
+
+function pauseAnim() {
+  clearInterval(animTimer);
+  animTimer = null;
+  setStatus('paused');
+  document.getElementById('btn-play').disabled = false;
+  document.getElementById('btn-pause').disabled = true;
+}
+
+function resetAll() {
+  pauseAnim();
+  steps = [];
+  currentStep = -1;
+  huffCodes = {};
+  setStatus('idle');
+  document.getElementById('step-counter').textContent = 'Step 0 / 0';
+  document.getElementById('step-box').innerHTML = 'Press <strong>Build Steps</strong> then <strong>Step</strong> or <strong>Play</strong> to begin.';
+  document.getElementById('btn-step').disabled = true;
+  document.getElementById('btn-play').disabled = true;
+  document.getElementById('btn-pause').disabled = true;
+  document.getElementById('stat-extractions').textContent = 0;
+  document.getElementById('stat-merges').textContent = 0;
+  document.getElementById('stat-comparisons').textContent = 0;
+  document.getElementById('stat-bits').textContent = 0;
+  document.getElementById('history-body').innerHTML = '';
+  document.getElementById('greedy-steps').innerHTML = '';
+  highlightPseudo(-1);
+  drawEmptyTree();
+  drawEmptyHeap();
+  document.getElementById('code-table-body').innerHTML = '';
+}
+
+function applyStep(idx) {
+  const s = steps[idx];
+  document.getElementById('step-counter').textContent = `Step ${idx+1} / ${steps.length}`;
+  document.getElementById('stat-extractions').textContent = s.extractions;
+  document.getElementById('stat-merges').textContent = s.merges;
+  document.getElementById('stat-comparisons').textContent = s.comparisons;
+  document.getElementById('step-box').innerHTML = s.explanation;
+  highlightPseudo(s.pseudoLine);
+  addHistory(idx, s);
+
+  // Draw visualizations
+  drawTree(s.treeRoot, s.action, s.h1, s.h2);
+  drawHeap(s.heap, s.h1, s.h2);
+  updateGreedyHighlight(idx);
+}
+
+function updateSpeed(val) {
+  const speeds = [2000,1400,1000,700,500,350,200,100];
+  speedMs = speeds[val-1] || 700;
+  const labels = ['0.25x','0.5x','0.75x','1x','1.5x','2x','3x','4x'];
+  document.getElementById('speed-label').textContent = labels[val-1]||'1x';
+  if (animTimer) { pauseAnim(); playAnim(); }
+}
+
+function setStatus(s) {
+  const b = document.getElementById('status-badge');
+  b.className = 'status-badge ' + s;
+  b.textContent = s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+// ============================================================
+// HISTORY TABLE
+// ============================================================
+let historyRows = [];
+function addHistory(idx, s) {
+  historyRows.push({idx, ...s});
+  if (historyRows.length > 30) historyRows.shift();
+  const tbody = document.getElementById('history-body');
+  tbody.innerHTML = historyRows.map((r,i) =>
+    `<tr onclick="jumpToStep(${r.idx})" class="${r.idx===currentStep?'active-row':''}">
+      <td>${r.idx+1}</td>
+      <td class="${r.action}">${r.action}</td>
+      <td>${r.h1||''}${r.h2?' + '+r.h2:''}</td>
+      <td>${r.merges} merges</td>
+    </tr>`
+  ).join('');
+  tbody.scrollTop = tbody.scrollHeight;
+}
+
+function jumpToStep(idx) {
+  pauseAnim();
+  currentStep = idx;
+  applyStep(idx);
+  setStatus('paused');
+  document.getElementById('btn-play').disabled = false;
+}
+
+// ============================================================
+// TREE DRAWING (SVG)
+// ============================================================
+function drawEmptyTree() {
+  const msg = `<text x="400" y="200" text-anchor="middle" fill="#30363d" font-size="16" font-family="sans-serif">Press "Build Steps" to start visualization</text>`;
+  document.getElementById('tree-svg').innerHTML = msg;
+  const c = document.getElementById('tree-svg-combined');
+  c.setAttribute('viewBox', '0 0 800 400');
+  c.setAttribute('height', '400');
+  c.style.height = '400px';
+  c.innerHTML = msg;
+}
+
+function computeTreeLayout(node, depth, xStart, xEnd, positions={}) {
+  if (!node) return;
+  const x = (xStart + xEnd) / 2;
+  const y = 60 + depth * 80;
+  positions[node.id] = {x, y, node};
+  if (node.left) computeTreeLayout(node.left, depth+1, xStart, x, positions);
+  if (node.right) computeTreeLayout(node.right, depth+1, x, xEnd, positions);
+  return positions;
+}
+
+function drawTree(root, action, h1, h2) {
+  if (!root) { drawEmptyTree(); return; }
+
+  const positions = computeTreeLayout(root, 0, 0, 800, {});
+  const nodes = Object.values(positions);
+  if (!nodes.length) return;
+
+  const maxY = Math.max(...nodes.map(n => n.y));
+  const svgH = Math.max(400, maxY + 80);
+  const vb = `0 0 800 ${svgH}`;
+
+  let edgesHtml = '', nodesHtml = '';
+
+  for (const {x, y, node} of nodes) {
+    if (node.left && positions[node.left.id]) {
+      const {x:cx, y:cy} = positions[node.left.id];
+      edgesHtml += `<line x1="${x}" y1="${y}" x2="${cx}" y2="${cy}" stroke="#30363d" stroke-width="1.5" class="huff-edge"/>`;
+      edgesHtml += `<text x="${(x+cx)/2-8}" y="${(y+cy)/2}" fill="#8b949e" font-size="12" font-family="monospace">0</text>`;
+    }
+    if (node.right && positions[node.right.id]) {
+      const {x:cx, y:cy} = positions[node.right.id];
+      edgesHtml += `<line x1="${x}" y1="${y}" x2="${cx}" y2="${cy}" stroke="#30363d" stroke-width="1.5" class="huff-edge"/>`;
+      edgesHtml += `<text x="${(x+cx)/2+4}" y="${(y+cy)/2}" fill="#8b949e" font-size="12" font-family="monospace">1</text>`;
+    }
+  }
+
+  for (const {x, y, node} of nodes) {
+    const isH1 = node.id === h1;
+    const isH2 = node.id === h2;
+    let fill, stroke;
+    if (action === 'done' || action === 'codes') {
+      fill = node.isLeaf ? '#1b3a2d' : '#1c2430';
+      stroke = node.isLeaf ? '#3fb950' : '#bc8cff';
+    } else if (isH1) {
+      fill = '#3d2400'; stroke = '#d29922';
+    } else if (isH2) {
+      fill = '#3d1000'; stroke = '#f85149';
+    } else if (!node.isLeaf) {
+      fill = '#1f4068'; stroke = '#58a6ff';
+    } else {
+      fill = '#1b3a2d'; stroke = '#3fb950';
+    }
+
+    const r = 26;
+    const code = huffCodes[node.char] || '';
+    nodesHtml += `<g class="huff-node" transform="translate(${x},${y})">
+      <circle r="${r}" fill="${fill}" stroke="${stroke}" stroke-width="2"/>
+      ${node.isLeaf
+        ? `<text y="-6" text-anchor="middle" fill="#f0e060" font-size="13" font-weight="bold">${node.char==' '?'␣':escHtml(node.char||'')}</text>
+           <text y="8" text-anchor="middle" fill="${stroke}" font-size="11">${node.freq}</text>
+           ${code?`<text y="20" text-anchor="middle" fill="#8b949e" font-size="9">${code}</text>`:''}`
+        : `<text y="5" text-anchor="middle" fill="${stroke}" font-size="13" font-weight="bold">${node.freq}</text>`
+      }
+    </g>`;
+  }
+
+  const content = edgesHtml + nodesHtml;
+
+  // Main tree tab SVG
+  const mainSvg = document.getElementById('tree-svg');
+  mainSvg.setAttribute('viewBox', vb);
+  mainSvg.innerHTML = content;
+
+  // Combined tab tree SVG — set explicit height so it fills real space
+  const combinedSvg = document.getElementById('tree-svg-combined');
+  combinedSvg.setAttribute('viewBox', vb);
+  // Height scales with the viewBox aspect ratio relative to the container width
+  const containerW = combinedSvg.parentElement.clientWidth || 800;
+  const scaledH = Math.round((svgH / 800) * containerW);
+  combinedSvg.setAttribute('height', Math.max(scaledH, svgH));
+  combinedSvg.style.height = Math.max(scaledH, svgH) + 'px';
+  combinedSvg.innerHTML = content;
+}
+
+// ============================================================
+// HEAP DRAWING (SVG)
+// ============================================================
+function drawEmptyHeap() {
+  const msg = `<text x="400" y="150" text-anchor="middle" fill="#30363d" font-size="14">Heap will appear here after Build Steps</text>`;
+  document.getElementById('heap-svg').innerHTML = msg;
+  const c = document.getElementById('heap-svg-combined');
+  c.setAttribute('viewBox', '0 0 800 340');
+  c.setAttribute('height', '260');
+  c.style.height = '260px';
+  c.innerHTML = msg;
+}
+
+function drawHeap(heap, h1, h2) {
+  if (!heap || !heap.length) { drawEmptyHeap(); return; }
+
+  const barW = Math.min(60, 700 / heap.length - 4);
+  const totalW = heap.length * (barW + 4);
+  const startX = (800 - totalW) / 2;
+  const maxFreq = Math.max(...heap.map(n => n.freq));
+  const maxH = 200;
+  // Total viewBox height: top padding (80) + bars (maxH) + char label + index label
+  const svgH = 340;
+
+  let html = '';
+  heap.forEach((node, i) => {
+    const bh = Math.max(20, (node.freq / maxFreq) * maxH);
+    const x = startX + i * (barW + 4);
+    const y = 280 - bh;
+    const isH1 = node.id === h1;
+    const isH2 = node.id === h2;
+    const fill = isH1 ? '#d29922' : isH2 ? '#f85149' : '#58a6ff';
+    html += `<g class="heap-bar">
+      <rect x="${x}" y="${y}" width="${barW}" height="${bh}" rx="4" fill="${fill}" opacity="0.85"/>
+      <text x="${x+barW/2}" y="${y-6}" text-anchor="middle" fill="#e6edf3" font-size="12" font-family="monospace">${node.freq}</text>
+      <text x="${x+barW/2}" y="296" text-anchor="middle" fill="#f0e060" font-size="12" font-family="monospace">${node.char?node.char==' '?'␣':node.char:'∅'}</text>
+    </g>`;
+  });
+
+  html += `<text x="10" y="315" fill="#484f58" font-size="10">Index (min-heap order):</text>`;
+  heap.forEach((node, i) => {
+    const x = startX + i * (barW + 4);
+    html += `<text x="${x+barW/2}" y="326" text-anchor="middle" fill="#484f58" font-size="10">${i}</text>`;
+  });
+
+  const vb = `0 0 800 ${svgH}`;
+
+  // Main heap tab SVG
+  const mainSvg = document.getElementById('heap-svg');
+  mainSvg.setAttribute('viewBox', vb);
+  mainSvg.innerHTML = html;
+
+  // Combined tab heap SVG — set explicit height so it fills real space
+  const combinedSvg = document.getElementById('heap-svg-combined');
+  combinedSvg.setAttribute('viewBox', vb);
+  const containerW = combinedSvg.parentElement.clientWidth || 800;
+  const scaledH = Math.round((svgH / 800) * containerW);
+  combinedSvg.setAttribute('height', Math.max(scaledH, 200));
+  combinedSvg.style.height = Math.max(scaledH, 200) + 'px';
+  combinedSvg.innerHTML = html;
+}
+
+// ============================================================
+// ENCODE / DECODE
+// ============================================================
+function renderCodeTable(freq, root) {
+  if (!Object.keys(huffCodes).length) return;
+  const tbody = document.getElementById('code-table-body');
+  tbody.innerHTML = Object.entries(huffCodes)
+    .sort((a,b) => b[1].length - a[1].length)
+    .map(([c, code]) => {
+      const f = freq[c] || 0;
+      const huffBits = f * code.length;
+      const fixedBits = f * 8;
+      const saving = fixedBits > 0 ? Math.round((1 - huffBits/fixedBits)*100) : 0;
+      return `<tr>
+        <td class="char">${c===' '?'(space)':c}</td>
+        <td>${f}</td>
+        <td class="bits">${code}</td>
+        <td>${code.length}</td>
+        <td class="savings">${fixedBits} → ${huffBits} (${saving}% less)</td>
+      </tr>`;
+    }).join('');
+}
+
+function encodeText() {
+  const text = document.getElementById('encode-input').value;
+  if (!Object.keys(huffCodes).length) { alert('Build steps first!'); return; }
+  let bits = '';
+  for (const c of text) {
+    if (huffCodes[c]) bits += huffCodes[c];
+    else bits += '[?]';
+  }
+  document.getElementById('encode-output').textContent = bits;
+  const fixedBits = text.length * 8;
+  const huffBits = bits.replace(/\[.*?\]/g,'').length;
+  document.getElementById('encode-stats').textContent =
+    `Fixed encoding: ${fixedBits} bits | Huffman: ${huffBits} bits | Compression: ${Math.round((1-huffBits/fixedBits)*100)}%`;
+  document.getElementById('decode-input').value = bits;
+}
+
+function decodeText() {
+  if (!Object.keys(huffCodes).length) { alert('Build steps first!'); return; }
+  const bits = document.getElementById('decode-input').value.trim();
+  const reverseMap = Object.fromEntries(Object.entries(huffCodes).map(([c,b]) => [b,c]));
+  let result = '';
+  let current = '';
+  for (const b of bits) {
+    current += b;
+    if (reverseMap[current]) {
+      result += reverseMap[current];
+      current = '';
+    }
+  }
+  document.getElementById('decode-output').textContent = result || '(could not decode)';
+}
+
+// ============================================================
+// COMPLEXITY CHART
+// ============================================================
+function updateComplexityChart(maxN) {
+  maxN = parseInt(maxN);
+  document.getElementById('n-label').textContent = maxN;
+  const svg = document.getElementById('complexity-chart');
+
+  const W = 900, H = 220, padL = 62, padB = 34, padT = 16, padR = 24;
+  const chartW = W - padL - padR, chartH = H - padB - padT;
+
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+
+  const ns = Array.from({length: maxN}, (_, i) => i + 1);
+
+  // Correct curves:
+  // Huffman:      O(n log n) — 3 heap ops per merge × (n−1) merges
+  // Shannon-Fano: worst case O(n²)
+  // Arithmetic:   O(n) — single pass
+  const huffman     = ns.map(n => n * Math.log2(Math.max(n, 2)));
+  const shannonFano = ns.map(n => n * n);
+  const arithmetic  = ns.map(n => n * 1.0);
+
+  const allVals = showCompare ? [...shannonFano] : [...huffman];
+  const maxVal  = Math.max(...allVals, 1);
+
+  const scaleX = n => padL + (n - 1) / Math.max(maxN - 1, 1) * chartW;
+  const scaleY = v => padT + chartH - Math.min(v / maxVal, 1) * chartH;
+
+  const polyline = (arr, color, dash = '') =>
+    `<polyline points="${arr.map((v, i) => `${scaleX(i+1).toFixed(1)},${scaleY(v).toFixed(1)}`).join(' ')}"
+      fill="none" stroke="${color}" stroke-width="2.5"
+      ${dash ? `stroke-dasharray="${dash}"` : ''} stroke-linejoin="round"/>`;
+
+  let html = '';
+
+  // Grid
+  for (let i = 1; i <= 4; i++) {
+    const y = padT + (i / 4) * chartH;
+    html += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${padL + chartW}" y2="${y.toFixed(1)}" stroke="#21262d" stroke-width="1"/>`;
+    html += `<text x="${(padL - 7).toFixed(1)}" y="${(y + 4).toFixed(1)}" text-anchor="end" fill="#484f58" font-size="12">${Math.round(maxVal * (1 - i/4))}</text>`;
+  }
+  for (let n = 1; n <= maxN; n += Math.ceil(maxN / 10)) {
+    html += `<text x="${scaleX(n).toFixed(1)}" y="${(padT + chartH + 17).toFixed(1)}" text-anchor="middle" fill="#484f58" font-size="12">${n}</text>`;
+  }
+
+  // Axes
+  html += `<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + chartH}" stroke="#484f58" stroke-width="1.5"/>`;
+  html += `<line x1="${padL}" y1="${padT + chartH}" x2="${padL + chartW}" y2="${padT + chartH}" stroke="#484f58" stroke-width="1.5"/>`;
+
+  // Lines
+  html += polyline(huffman, '#58a6ff');
+  if (showCompare) {
+    html += polyline(shannonFano, '#f85149', '7,4');
+    html += polyline(arithmetic,  '#3fb950', '4,3');
+  }
+
+  // Axis labels
+  html += `<text x="${(padL + chartW / 2).toFixed(1)}" y="${(H - 3).toFixed(1)}" text-anchor="middle" fill="#8b949e" font-size="13">n (distinct characters)</text>`;
+  html += `<text x="14" y="${(padT + chartH / 2).toFixed(1)}" text-anchor="middle" fill="#8b949e" font-size="13" transform="rotate(-90,14,${(padT + chartH / 2).toFixed(1)})">Operations</text>`;
+
+  // ── Legend box (top-left inside chart) ──────────────
+  const lx = padL + 14, ly = padT + 10;
+  const legendH = showCompare ? 72 : 28;
+  html += `<rect x="${lx - 10}" y="${ly - 8}" width="230" height="${legendH}" rx="5" fill="#161b22" stroke="#30363d" stroke-width="1" opacity="0.95"/>`;
+  html += `<line x1="${lx}" y1="${ly + 6}" x2="${lx + 24}" y2="${ly + 6}" stroke="#58a6ff" stroke-width="2.5"/>`;
+  html += `<text x="${lx + 30}" y="${ly + 11}" fill="#58a6ff" font-size="13" font-family="'Courier New',monospace">Huffman — O(n log n)</text>`;
+  if (showCompare) {
+    html += `<line x1="${lx}" y1="${ly + 28}" x2="${lx + 24}" y2="${ly + 28}" stroke="#f85149" stroke-width="2.5" stroke-dasharray="7,4"/>`;
+    html += `<text x="${lx + 30}" y="${ly + 33}" fill="#f85149" font-size="13" font-family="'Courier New',monospace">Shannon-Fano — O(n²) worst</text>`;
+    html += `<line x1="${lx}" y1="${ly + 50}" x2="${lx + 24}" y2="${ly + 50}" stroke="#3fb950" stroke-width="2.5" stroke-dasharray="4,3"/>`;
+    html += `<text x="${lx + 30}" y="${ly + 55}" fill="#3fb950" font-size="13" font-family="'Courier New',monospace">Arithmetic Coding — O(n)</text>`;
+  }
+
+  svg.innerHTML = html;
+}
+
+function toggleAlgo() {
+  showCompare = !showCompare;
+  document.getElementById('btn-toggle-algo').textContent = showCompare ? 'Hide Comparisons' : 'Show Comparisons';
+  const n = parseInt(document.getElementById('n-slider').value);
+  updateComplexityChart(n);
+}
+
+// ============================================================
+// GREEDY TAB
+// ============================================================
+function renderGreedySteps() {
+  const container = document.getElementById('greedy-steps');
+  const mergeSteps = steps.filter(s => s.action === 'merge');
+  container.innerHTML = mergeSteps.map((s, i) =>
+    `<div class="greedy-step" id="gs-${i}">
+      <div class="step-num">${i+1}</div>
+      <div>
+        <div style="font-size:13px;font-weight:600">Greedy Choice #${i+1}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:3px">${s.explanation.replace(/<[^>]+>/g,'')}</div>
+      </div>
+    </div>`
+  ).join('');
+
+  // Set greedy-bits
+  if (Object.keys(huffCodes).length && inputText) {
+    let bits = 0;
+    const freq = countFreq(inputText);
+    for (const [c,f] of Object.entries(freq)) bits += f * (huffCodes[c]||'0').length;
+    document.getElementById('greedy-bits').textContent = bits;
+  }
+}
+
+function updateGreedyHighlight(stepIdx) {
+  if (steps[stepIdx] && steps[stepIdx].action === 'merge') {
+    const mergeSteps = steps.filter(s => s.action === 'merge');
+    const mi = mergeSteps.indexOf(steps[stepIdx]);
+    document.querySelectorAll('.greedy-step').forEach((el, i) => {
+      el.classList.remove('current', 'done');
+      if (i === mi) el.classList.add('current');
+      else if (i < mi) el.classList.add('done');
+    });
+  }
+}
+
+// ============================================================
+// TABS
+// ============================================================
+function showTab(name) {
+  document.querySelectorAll('.viz-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.viz-pane').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  const tabs = ['tree','heap','combined','encode','complexity','greedy','edu'];
+  const idx = tabs.indexOf(name);
+  if (idx >= 0) document.querySelectorAll('.viz-tab')[idx].classList.add('active');
+}
+
+// ============================================================
+// COLLAPSIBLE
+// ============================================================
+function toggleCollapse(header) {
+  const body = header.nextElementSibling;
+  const arrow = header.querySelector('span');
+  body.classList.toggle('open');
+  arrow.textContent = body.classList.contains('open') ? '▼' : '▶';
+}
+
+// ============================================================
+// INITIAL DRAW
+// ============================================================
+drawEmptyTree();
+drawEmptyHeap();
+
+</script>
+
+
+</body></html>
